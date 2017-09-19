@@ -1,0 +1,12 @@
+data
+.ipynb_checkpoints
+models
+*.swp
+*.p
+dataset
+windows_sim
+run1
+output_videos
+output_images
+test_images
+
