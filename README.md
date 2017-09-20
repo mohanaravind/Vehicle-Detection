@@ -26,6 +26,9 @@ Data being key to any classifier/machine learning I would like to mention the di
 
 Additional data source had to be pre-processed to make it available for training. I used the below functions to help me in doing that. It must be noted that not the entire dataset was used. The total dataset was close to 5 GB. The time it took to do conversion was more than 2 hours on my machine. Here I crop the image to the region of interest and place it to a data folder based on the category of the image from csv file. Traffic lights and Pedestrians are considered as non-vehicles in this setup
 
+###### Specific data augmentation
+My model was classifying certain section of the roads as vehicles when it is not actually a road. It was just a cone on the side. It also had issues with detecting white cars when seen from a longer distance. Getting specific images on these and duplicating them and augmenting them helped my model learn better.
+
 ```python
 def save_as_sample(inp, out, xmin, ymin, xmax, ymax, label):
     # Read the file
