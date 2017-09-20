@@ -7,7 +7,7 @@
 The goal of this project is to detect vehicles on the road. I used a deep learning approach with a full-convolutional network to distinguish vehicles from non-vehicles. The reason why I went with this approach instead of using the Histogram of Oriented Gradients (HOG) features that was originally part of this project is these features are learnt by CNN in its inter-mediate layer without hand-coding them. The classifier that has been used here is more scalable than an SVM.
 
 All the code is available through the [Project.ipynb](/Project.ipynb) Python notebook
-The final result could be seen from this [output.mp4](/output.mp4) or from YouTube from [here](https://youtu.be/iUrz8U0XhLA)
+The final result could be seen from this [output.mp4](/output.mp4) or from YouTube from [here](https://youtu.be/ADiQAX3VeNw)
 
 ### Data preparation
 Data being key to any classifier/machine learning I would like to mention the different sources of data that I tried:
@@ -274,7 +274,7 @@ def process(img):
     return out
 
 ```
-The final result could be seen from this [output.mp4](/output.mp4) or from YouTube from [here](https://youtu.be/iUrz8U0XhLA)
+The final result could be seen from this [output.mp4](/output.mp4) or from YouTube from [here](https://youtu.be/ADiQAX3VeNw)
 
 
 #### Avoiding false positives
