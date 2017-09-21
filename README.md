@@ -248,40 +248,18 @@ I decided to clip off the region that is not necessary for vehicle detection. Ha
 
 ```python
 # PIPELINE
+# PIPELINE
 ACTIVATION_THRESHOLD = 0.9
 
 # Initialize the lane detector
 # calibration_data = calibrate()
 # lane_detector = LaneDetector(calibration_data)
 class VehicleDetector():
-    def __init__(self, always_draw=False, draw_every=3):       
+    def __init__(self, n_frames=3):       
         # Initialize
-        self.draw_every = draw_every # frames
-        self.last_detected = self.draw_every                
-        self.always_draw = always_draw
-        self.heat = None
-        self.labels = label([])
-    def should_draw_detection(self):
-        # Draw only 
-        should = not(self.last_detected//self.draw_every == 0)
-                
-        # Increment
-        self.last_detected = self.last_detected + 1                
-        
-        # Reset
-        if should:
-            self.last_detected = 1
-            
-        # if its always draw
-        if self.always_draw:
-            should = True
-                
-        return should
+        self.history = deque(maxlen=n_frames)
     
-    def process(self, img):
-        if self.heat is None:
-            self.heat = np.zeros_like(img[:,:,0]).astype(np.float)
-        
+    def process(self, img):        
         # Find the areas on the image where vehicle detections are activated
         bboxes = detect_vehicles(img)   
 
@@ -292,20 +270,21 @@ class VehicleDetector():
         #img = lane_detector.process(img)
 
         # Build up heatmap
-        self.heat = add_heat(self.heat, bboxes)
-
-        if self.should_draw_detection():        
-            # Apply threshold to eliminate false positives
-            heat = apply_threshold(self.heat, 9)
-
-            # Visualize the heatmap 
-            heatmap = np.clip(heat, 0, 255)
-            #plt.imshow(heatmap, cmap='hot')             
+        heat = add_heat(img, bboxes)
         
-            # Find final boxes from heatmap using label function
-            self.labels = label(heatmap)
-                        
-            
+        # Add it to the queue
+        self.history.append(heat)
+               
+        # Apply threshold to eliminate false positives
+        heat = apply_threshold(sum(self.history)//len(self.history), 9)
+                
+        # Visualize the heatmap 
+        heatmap = np.clip(heat, 0, 255)
+        #plt.imshow(heatmap, cmap='hot')             
+
+        # Find final boxes from heatmap using label function
+        self.labels = label(heatmap)
+                                            
         out = draw_labeled_bboxes(np.copy(img), self.labels)
 
         return out
@@ -315,6 +294,8 @@ The final result could be seen from this [output.mp4](/output.mp4) or from YouTu
 
 
 #### Avoiding false positives
+
+I sum the heatmaps of 3 consecutive frames from the video and take the average of their values to threshold them
 
 Activations
 
