@@ -78,11 +78,9 @@ def build_additional_samples(path, input_idx):
 
 > 
 Number of vehicles examples before data augmentation = 8792
-Number of additional vehicles examples = 68972
-Number of non-vehicles examples = 8968
-Number of additional non-vehicles examples = 27186
-Total data available before augmentation = 17760
-Total data available after augmentation = 263990
+Number of non-vehicles examples before data augmentation = 8968
+Total number of vehicles examples = 11429
+Total number of non-vehicles examples = 10768
 
 **Note: I did not end up using the additional data for my final training
 
@@ -233,7 +231,7 @@ I initially had multiple window scales `(60,60), (90,90), (120,120)` to build th
 
 So I decided to modify the architecture of my network and use the detections directly from the convolutional layer output. Basically the output of the CNN before flattening is going to perform the sliding search. Areas of the image where there is more activations while using a hyperbolic tan function (between -1 and 1) gives the areas to choose.
 
-I decided to clip off the region that is not necessary for vehicle detection. Having an `activation threshold of 0.7` helped in reducing false activations. Also by keeping a `threshold of 3` while building the heat map helped in keeping the false positive minimum.
+I decided to clip off the region that is not necessary for vehicle detection. Having an `activation threshold of 0.9` helped in reducing false activations. Also by keeping a `threshold of 9` while building the heat map helped in keeping the false positive minimum.
 
 ##### Detecting active regions from CNN
 
@@ -249,29 +247,68 @@ I decided to clip off the region that is not necessary for vehicle detection. Ha
 #### The pipeline
 
 ```python
-# The pipeline
-ACTIVATION_THRESHOLD = 0.7
-def process(img):    
-    # Find the areas on the image where vehicle detections are activated
-    bboxes = detect_vehicles(img)   
-            
-    # Visualize the bounding boxes
-    #out = draw_boxes(img, bboxes, color=(0, 255, 0), thick=2)
+# PIPELINE
+ACTIVATION_THRESHOLD = 0.9
 
-    # Build up heatmap
-    heat = add_heat(img, bboxes)
-    
-    # Apply threshold to eliminate false positives
-    heat = apply_threshold(heat, 3)
-    
-    # Visualize the heatmap 
-    heatmap = np.clip(heat, 0, 255)
-    
-    # Find final boxes from heatmap using label function
-    labels = label(heatmap)
-    out = draw_labeled_bboxes(np.copy(img), labels)
+# Initialize the lane detector
+# calibration_data = calibrate()
+# lane_detector = LaneDetector(calibration_data)
+class VehicleDetector():
+    def __init__(self, always_draw=False, draw_every=3):       
+        # Initialize
+        self.draw_every = draw_every # frames
+        self.last_detected = self.draw_every                
+        self.always_draw = always_draw
+        self.heat = None
+        self.labels = label([])
+    def should_draw_detection(self):
+        # Draw only 
+        should = not(self.last_detected//self.draw_every == 0)
+                
+        # Increment
+        self.last_detected = self.last_detected + 1                
+        
+        # Reset
+        if should:
+            self.last_detected = 1
             
-    return out
+        # if its always draw
+        if self.always_draw:
+            should = True
+                
+        return should
+    
+    def process(self, img):
+        if self.heat is None:
+            self.heat = np.zeros_like(img[:,:,0]).astype(np.float)
+        
+        # Find the areas on the image where vehicle detections are activated
+        bboxes = detect_vehicles(img)   
+
+        # Visualize the bounding boxes
+        #out = draw_boxes(img, bboxes, color=(0, 255, 0), thick=2)
+        
+        # Add lane lines to the image
+        #img = lane_detector.process(img)
+
+        # Build up heatmap
+        self.heat = add_heat(self.heat, bboxes)
+
+        if self.should_draw_detection():        
+            # Apply threshold to eliminate false positives
+            heat = apply_threshold(self.heat, 9)
+
+            # Visualize the heatmap 
+            heatmap = np.clip(heat, 0, 255)
+            #plt.imshow(heatmap, cmap='hot')             
+        
+            # Find final boxes from heatmap using label function
+            self.labels = label(heatmap)
+                        
+            
+        out = draw_labeled_bboxes(np.copy(img), self.labels)
+
+        return out
 
 ```
 The final result could be seen from this [output.mp4](/output.mp4) or from YouTube from [here](https://youtu.be/ADiQAX3VeNw)
@@ -300,6 +337,7 @@ def apply_threshold(heatmap, threshold):
 
 
 
+![test images](/examples/heatmap.png)
 
 ---
 
